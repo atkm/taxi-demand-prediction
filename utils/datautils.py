@@ -18,11 +18,15 @@ def read_rides(csv):
     if year in ['2015','2016']:
         cols_orig = ['tpep_pickup_datetime', 'pickup_longitude', 'pickup_latitude']
     elif year in ['2014']:
-        cols_orig = ['pickup_datetime', 'pickup_longitude', 'pickup_latitude']
+        # the column names in 2014 data are padded by a space
+        cols_orig = [' ' + colname for colname in ['pickup_datetime', 'pickup_longitude', 'pickup_latitude']]
     df = pd.read_csv(csv, usecols=cols_orig)
     
+    # change column names to ['pickup_datetime', 'pickup_longitude', 'pickup_latitude']
     if year in ['2015','2016']:
         df = df.rename(columns={'tpep_pickup_datetime': 'pickup_datetime'})
+    if year in ['2014']:
+        df = df.rename(columns = lambda colName: colName.strip())
 
     df['pickup_datetime'] = pd.to_datetime(df['pickup_datetime'])
     return df

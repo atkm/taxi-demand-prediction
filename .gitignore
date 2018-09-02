@@ -2,3 +2,5 @@
 __pycache__/
 .ipynb_checkpoints/
 venv/
+data/metar_data/*.csv
+data/yellow_tripdata*.csv
