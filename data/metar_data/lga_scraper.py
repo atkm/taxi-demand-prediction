@@ -49,7 +49,10 @@ def get_lga(year, month):
 
     # timestamps in UTC to request data for
     startts = datetime.datetime(year, month, 1)
-    endts = datetime.datetime(year, month, 1)
+    if month==12:
+        endts = datetime.datetime(year+1, 1, 1)
+    else:
+        endts = datetime.datetime(year, month+1, 1)
 
     uri = SERVICE
 
@@ -80,3 +83,4 @@ if __name__ == '__main__':
     for y in range(2010,2018):
         for m in range(1,13):
             get_lga(y, m)
+            time.sleep(1)

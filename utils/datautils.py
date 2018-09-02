@@ -3,6 +3,13 @@ from utils import geoutils
 import re
 from datetime import datetime
 
+# returns the path to the rides data for the given year-month.
+def get_rides_data(year, month):
+    pass
+
+def get_metar_data(year, month):
+    pass
+
 # e.g. csv='../data/yellow_tripdata_2016-01_small.csv'
 def read_rides(csv):
     fname = csv.split('/')[-1]
@@ -51,9 +58,17 @@ def read_metar(csv):
 
     # precipitation and temperature each has its own processing logic; need to work on them separately.
     precip = df[['datetime','precip_in']]
-    # Precip info comes at the 51st minute of each hour.
-    # Ensure there is one precip record for each hour.
-    assert sum(precip['datetime'].dt.minute == 51) == 24
+
+    # Precip info usually comes at the 51st minute of each hour.
+    # If not, look for the nearest minute.
+    # Another complication: the last record of a day is sometimes included in the file for the next day.
+    #   e.g. "2013-12-31 23:51:00" is in 2014-01.csv.
+    # These issues are currently ignored.
+    # TODO: Ensure there is one precip record for each hour.
+    # Take into account the issues above.
+    #precip['month_day'] = precip.datetime.dt.strftime("%m/%d")
+    #precip.groupby('month_day').apply(lambda grp: sum(grp.datetime.dt.minute == 51) == 24)
+
     precip = precip[precip['datetime'].dt.minute == 51]
     # Drop the minute information so the datetime format matches that of fahrenheit_avg.
     precip['datetime'] = pd.to_datetime(precip['datetime'].dt.strftime("%Y-%m-%d %H"))
@@ -64,7 +79,31 @@ def read_metar(csv):
     fahrenheit['datetime'] = pd.to_datetime(fahrenheit['datetime'].dt.strftime("%Y-%m-%d %H"))
     fahrenheit_avg = fahrenheit.groupby(['datetime']).mean()
 
-    # inner join 
+    # Warning: with the TODO above not fixed, the inner join will drop some records.
     weather = pd.merge(precip, fahrenheit_avg, on='datetime', how='inner')
-    assert weather.shape[0] == 24, "Something is wrong at the join. There isn't one record for each hour."
-    return weather.set_index('datetime')
+    print("Warning: read_metar is not fully developed. Some records may be improperly dropped.")
+
+    # TODO: do the same kind of assert as above.
+    #assert weather.shape[0] == 24, "Something is wrong at the join. There isn't one record for each hour."
+
+    return weather
+
+# Given rides and metar DataFrames, returns a DataFrame and a Series from which
+# numpy arrays appropriate for model training can be obtained by calling value() on them.
+# The columns of the DataFrame are ['weekday', 'hour', 'grid_x', 'grid_y', 'fahrenheit', 'precip_in'], and the Series contains counts.
+def prep_for_ml(rides_df, metar_df):
+    rides = clean_rides(rides_df)
+    rides['join_datetime'] = pd.to_datetime(rides.pickup_datetime.dt.strftime("%Y-%m-%d %H"))
+    rides = add_grid_cols(rides).drop(['pickup_latitude', 'pickup_longitude', 'pickup_datetime'], axis=1)
+    counts = rides.groupby(['join_datetime', 'grid_x', 'grid_y']).size()
+    counts = counts.reset_index(name='count')
+
+    df = pd.merge(counts, metar_df, left_on='join_datetime', right_on='datetime', how='inner')
+    df['weekday'] = df.datetime.dt.weekday
+    df['hour'] = df.datetime.dt.hour
+    df = df.drop(['join_datetime', 'datetime'], axis=1)
+    features = ['weekday', 'hour', 'grid_x', 'grid_y', 'fahrenheit', 'precip_in']
+    X = df[features]
+    y = df['count']
+    return (X, y)
+
