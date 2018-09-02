@@ -1,18 +1,25 @@
 import pandas as pd
 from utils import geoutils
 import re
+import os
 from datetime import datetime
 
-# returns the path to the rides data for the given year-month.
-def get_rides_data(year, month):
-    pass
+# Returns the path to the rides data for the given year-month.
+# year and month should be ints.
+def get_rides_data(year, month, size='tiny'):
+    fname = f'yellow_tripdata_{year}-{month:02}_{size}.csv'
+    return open(os.path.join(os.path.dirname(__file__), f'../data/{fname}'))
 
 def get_metar_data(year, month):
-    pass
+    fname = f'lga_{year}-{month:02}.csv'
+    return open(os.path.join(os.path.dirname(__file__), f'../data/metar_data/{fname}'))
 
 # e.g. csv='../data/yellow_tripdata_2016-01_small.csv'
 def read_rides(csv):
-    fname = csv.split('/')[-1]
+    try:
+        fname = csv.split('/')[-1]
+    except:
+        fname = csv.name
     ym_regex = re.search(r'(\d{4})-(\d{2})', fname)
     year = ym_regex.group(1)
     assert 2009 <= int(year) and int(year) <= 2017
@@ -25,16 +32,20 @@ def read_rides(csv):
 
     if year in ['2015','2016']:
         cols_orig = ['tpep_pickup_datetime', 'pickup_longitude', 'pickup_latitude']
-    elif year in ['2014']:
+    elif year in [str(y) for y in range(2010, 2015)]:
         # the column names in 2014 data are padded by a space
         cols_orig = [' ' + colname for colname in ['pickup_datetime', 'pickup_longitude', 'pickup_latitude']]
+    elif year in ['2009']:
+        cols_orig = ['Trip_Pickup_DateTime', 'Start_Lon', 'Start_Lat']
     df = pd.read_csv(csv, usecols=cols_orig)
     
     # change column names to ['pickup_datetime', 'pickup_longitude', 'pickup_latitude']
     if year in ['2015','2016']:
         df = df.rename(columns={'tpep_pickup_datetime': 'pickup_datetime'})
-    if year in ['2014']:
+    elif year in [str(y) for y in range(2010, 2015)]:
         df = df.rename(columns = lambda colName: colName.strip())
+    elif year in ['2009']:
+        df = df.rename(columns = {'Trip_Pickup_DateTime': 'pickup_datetime', 'Start_Lon': 'pickup_longitude', 'Start_Lat': 'pickup_latitude'})
 
     df['pickup_datetime'] = pd.to_datetime(df['pickup_datetime'])
     return df
@@ -76,6 +87,12 @@ def read_metar(csv):
     # Take the average of temperature records in each hour.
     fahrenheit = df[['datetime','fahrenheit']]
     # drop the minute information so records in the same hour are put in the same group.
+    # Some months contain strings in the fahrenheit column. e.g. 'M' in 2014-10.
+    if fahrenheit['fahrenheit'].dtype == 'object':
+        pat = r'\d+(\.\d+)?'
+        fahrenheit = fahrenheit[fahrenheit.fahrenheit.str.match(pat)]
+        fahrenheit['fahrenheit'] = fahrenheit.fahrenheit.astype('float')
+
     fahrenheit['datetime'] = pd.to_datetime(fahrenheit['datetime'].dt.strftime("%Y-%m-%d %H"))
     fahrenheit_avg = fahrenheit.groupby(['datetime']).mean()
 
