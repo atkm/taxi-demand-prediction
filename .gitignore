@@ -4,3 +4,4 @@ __pycache__/
 venv/
 data/metar_data/*.csv
 data/yellow_tripdata*.csv
+model_*/

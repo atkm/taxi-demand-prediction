@@ -15,6 +15,8 @@ def get_metar_data(year, month):
     return open(os.path.join(os.path.dirname(__file__), f'../data/metar_data/{fname}'))
 
 # e.g. csv='../data/yellow_tripdata_2016-01_small.csv'
+# Returns a DataFrame containing all rides within the bounds defined in geoutils.
+# Its columns are 'pickup_datetime', 'pickup_latitude', 'pickup_longitude'.
 def read_rides(csv):
     try:
         fname = csv.split('/')[-1]
@@ -32,9 +34,11 @@ def read_rides(csv):
 
     if year in ['2015','2016']:
         cols_orig = ['tpep_pickup_datetime', 'pickup_longitude', 'pickup_latitude']
-    elif year in [str(y) for y in range(2010, 2015)]:
         # the column names in 2014 data are padded by a space
+    elif year in ['2014']:
         cols_orig = [' ' + colname for colname in ['pickup_datetime', 'pickup_longitude', 'pickup_latitude']]
+    elif year in [str(y) for y in range(2010, 2014)]:
+        cols_orig = ['pickup_datetime', 'pickup_longitude', 'pickup_latitude']
     elif year in ['2009']:
         cols_orig = ['Trip_Pickup_DateTime', 'Start_Lon', 'Start_Lat']
     df = pd.read_csv(csv, usecols=cols_orig)
@@ -42,24 +46,32 @@ def read_rides(csv):
     # change column names to ['pickup_datetime', 'pickup_longitude', 'pickup_latitude']
     if year in ['2015','2016']:
         df = df.rename(columns={'tpep_pickup_datetime': 'pickup_datetime'})
-    elif year in [str(y) for y in range(2010, 2015)]:
+    elif year in ['2014']:
         df = df.rename(columns = lambda colName: colName.strip())
+    elif year in [str(y) for y in range(2010, 2014)]:
+        pass
     elif year in ['2009']:
         df = df.rename(columns = {'Trip_Pickup_DateTime': 'pickup_datetime', 'Start_Lon': 'pickup_longitude', 'Start_Lat': 'pickup_latitude'})
 
     df['pickup_datetime'] = pd.to_datetime(df['pickup_datetime'])
-    return df
+    return _clean_rides(df)
 
 # take a df with pickup_{latitude,longitude} columns, and add grid_{x,y} columns.
-def add_grid_cols(df):
+def _add_grid_cols(df):
     df['grid_x'] = df.pickup_longitude.apply(geoutils._get_grid_cell_x)
     df['grid_y'] = df.pickup_latitude.apply(geoutils._get_grid_cell_y)
     return df
 
-def clean_rides(df):
+def _clean_rides(df):
     in_nyc = df[['pickup_latitude','pickup_longitude']].apply(
             lambda row: geoutils.is_in_nyc(*row), axis=1)
     return df[in_nyc]
+
+# takes a raw (an output of read_rides) DataFrame, and counts the number of rides in each grid cell.
+def counts_by_grid_cell(df):
+    df = _add_grid_cols(df)
+    count = df.groupby(['grid_x', 'grid_y']).size()
+    return count
 
 def read_metar(csv):
     usecols = ['valid', 'tmpf', ' p01i'] # p01i has a whitespace in its name
@@ -69,6 +81,12 @@ def read_metar(csv):
 
     # precipitation and temperature each has its own processing logic; need to work on them separately.
     precip = df[['datetime','precip_in']]
+    # TODO: consolidate this filtering with fahrenheit
+    if precip['precip_in'].dtype == 'object':
+        pat = r'\d+(\.\d+)?'
+        precip = precip[precip.precip_in.str.match(pat)]
+        precip['precip_in'] = precip.precip_in.astype('float')
+
 
     # Precip info usually comes at the 51st minute of each hour.
     # If not, look for the nearest minute.
@@ -105,22 +123,24 @@ def read_metar(csv):
 
     return weather
 
-# Given rides and metar DataFrames, returns a DataFrame and a Series from which
-# numpy arrays appropriate for model training can be obtained by calling value() on them.
-# The columns of the DataFrame are ['weekday', 'hour', 'grid_x', 'grid_y', 'fahrenheit', 'precip_in'], and the Series contains counts.
-def prep_for_ml(rides_df, metar_df):
-    rides = clean_rides(rides_df)
-    rides['join_datetime'] = pd.to_datetime(rides.pickup_datetime.dt.strftime("%Y-%m-%d %H"))
-    rides = add_grid_cols(rides).drop(['pickup_latitude', 'pickup_longitude', 'pickup_datetime'], axis=1)
-    counts = rides.groupby(['join_datetime', 'grid_x', 'grid_y']).size()
+# Joins rides and metar DataFrames (outputs of read_{rides,metar})
+# The columns of the DataFrame are ['weekday', 'hour', 'grid_x', 'grid_y', 'fahrenheit', 'precip_in', 'count'].
+def join_rides_metar(rides_df, metar_df):
+    rides_df['join_datetime'] = pd.to_datetime(rides_df.pickup_datetime.dt.strftime("%Y-%m-%d %H"))
+    rides_df = _add_grid_cols(rides_df).drop(['pickup_latitude', 'pickup_longitude', 'pickup_datetime'], axis=1)
+    counts = rides_df.groupby(['join_datetime', 'grid_x', 'grid_y']).size()
     counts = counts.reset_index(name='count')
 
     df = pd.merge(counts, metar_df, left_on='join_datetime', right_on='datetime', how='inner')
     df['weekday'] = df.datetime.dt.weekday
     df['hour'] = df.datetime.dt.hour
     df = df.drop(['join_datetime', 'datetime'], axis=1)
+    return df
+    
+# Given an output DataFrame of join_rides_metar, converts it to the numpy
+# format that a sklearn model takes.
+def prep_for_ml(joined_df):
     features = ['weekday', 'hour', 'grid_x', 'grid_y', 'fahrenheit', 'precip_in']
-    X = df[features]
-    y = df['count']
+    X = joined_df[features].values
+    y = joined_df['count'].values
     return (X, y)
-
