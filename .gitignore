@@ -5,3 +5,6 @@ venv/
 data/metar_data/*.csv
 data/yellow_tripdata*.csv
 model_*/
+spark-2*/
+derby.log
+metastore_db/

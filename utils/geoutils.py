@@ -1,4 +1,10 @@
-
+# Boundary lengths
+# (in km)
+#       29.38
+#        __
+# 55.61 |  | 55.61
+#        --
+#       29.60
 LAT_NORTH = 41.0
 LAT_SOUTH = 40.5
 LON_EAST = -73.7
@@ -7,10 +13,11 @@ LON_WEST = -74.05
 LAT_HEIGHT = LAT_NORTH - LAT_SOUTH
 LON_WIDTH = LON_EAST - LON_WEST
 
+# Pick a grid so the area is partitioned into approximately 1km x 1km squares.
 # TODO: make this a variable. Need to make a class.
-NGRID_X = 150 # the number of grids in east-west
+NGRID_X = 30 # the number of grids in east-west
 DELTA_X = LON_WIDTH/NGRID_X
-NGRID_Y = 100 # in north-south
+NGRID_Y = 55 # in north-south
 DELTA_Y = LAT_HEIGHT/NGRID_Y
 
 
