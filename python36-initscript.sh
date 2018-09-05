@@ -1,16 +1,22 @@
 set -e
 set -u
 
-echo -n "Installing python3 .. "
+echo -n "Installing python3.6 .. "
 # install python3.6 and virtualenv from testing repo
+echo 'deb http://ftp.de.debian.org/debian testing main' | sudo tee --append /etc/apt/sources.list
+echo 'APT::Default-Release "stable";' | sudo tee -a /etc/apt/apt.conf.d/00local
 apt-get update
-apt-get -y install python3-pip
-pip3 install numpy
+apt-get -t testing -y --force-yes install python3.6 python3-venv libc6-dev libc-bin git # update libc6-dev to avoid breaking dependencies
+
+# venv unnecessary? -> nice because it comes with pip of the right version.
+python3.6 -m venv venv
+source ./venv/bin/activate
+pip install numpy
 echo "Done."
 
 # configure spark to use python3.6
 # ref: https://stackoverflow.com/questions/45843960/how-to-run-python3-on-googles-dataproc-pyspark?rq=1
-echo "export PYSPARK_PYTHON=python3" | tee -a  /etc/profile.d/spark_config.sh  /etc/*bashrc /usr/lib/spark/conf/spark-env.sh
+echo "export PYSPARK_PYTHON=python3.6" | tee -a  /etc/profile.d/spark_config.sh  /etc/*bashrc /usr/lib/spark/conf/spark-env.sh
 echo "export PYTHONHASHSEED=0" | tee -a /etc/profile.d/spark_config.sh /etc/*bashrc /usr/lib/spark/conf/spark-env.sh
 echo "spark.executorEnv.PYTHONHASHSEED=0" >> /etc/spark/conf/spark-defaults.conf
 
