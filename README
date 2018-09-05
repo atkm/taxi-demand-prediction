@@ -20,6 +20,9 @@ gcloud dataproc --region us-west1 clusters create pyspark --subnet default --zon
     DataProc only supports python2 by default.
 - Delete: gcloud dataproc clusters delete pyspark --region us-west1
 
+- file must be in a bucket. Read files with gs://bucket-name/filename.
+- python dependencies must be submitted with --py-files dependencies.zip
+
 ## Jupyter notebook instructions
 Deploy:
 0. Cluster Initialization (set timeout high enough. The default 600s=10m may not be enough)

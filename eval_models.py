@@ -5,7 +5,6 @@
 
 
 import pyspark
-from utils import sparkutils
 
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import VectorAssembler, OneHotEncoderEstimator
@@ -17,18 +16,26 @@ from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
 # In[2]:
 
 
-spark = pyspark.sql.SparkSession.builder.appName("Rides Preprocessor").master("local").config("spark.local.dir", "/home/atkm/nycTaxi/tmp").getOrCreate()
+#spark = pyspark.sql.SparkSession.builder.appName("Rides Preprocessor").master("local").config("spark.local.dir", "/home/atkm/nycTaxi/tmp").getOrCreate()
+spark = pyspark.sql.SparkSession.builder.appName("Rides Preprocessor").getOrCreate()
+
+# import my utils
+spark.sparkContext.addPyFile("sparkutils.zip")
+from utils import sparkutils
+
 
 
 # In[3]:
 
 
 def get_ride_data(year, month, size='tiny'):
-    return '/home/atkm/yellow_tripdata_{0}-{1:02d}_{2}.csv'.format(year, month, size)
+    #return 'file:///home/atkm/taxi-demand-prediction/data/yellow_tripdata_{0}-{1:02d}_{2}.csv'.format(year, month, size)
+    return 'gs://nyc-taxi-8472/yellow_tripdata_{0}-{1:02d}_{2}.csv'.format(year, month, size)
 
 def get_metar_data(year, month):
     #return f'/home/atkm/lga_{year}-{month:02}.csv'
-    return '/home/atkm/lga_{0}-{1:02d}.csv'.format(year, month)
+    #return 'file:///home/atkm/taxi-demand-prediction/data/lga_{0}-{1:02d}.csv'.format(year, month)
+    return 'gs://nyc-taxi-8472/lga_{0}-{1:02d}.csv'.format(year, month)
 
 def read_csv(path):
     return spark.read.format("csv")      .option("header", "true")      .option("inferSchema", "true")      .load(path)
