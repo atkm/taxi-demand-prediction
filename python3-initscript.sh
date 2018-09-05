@@ -2,7 +2,7 @@
 echo 'deb http://ftp.de.debian.org/debian testing main' | sudo tee --append /etc/apt/sources.list
 echo 'APT::Default-Release "stable";' | sudo tee -a /etc/apt/apt.conf.d/00local
 apt-get update
-apt-get -t testing -y install python3.6 python3-venv libc6-dev git # update libc6-dev to avoid breaking dependencies
+apt-get -t testing -y --force-yes install python3.6 python3-venv libc6-dev libc-bin git # update libc6-dev to avoid breaking dependencies
 
 python3.6 -m venv venv
 source ./venv/bin/activate
