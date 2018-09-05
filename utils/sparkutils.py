@@ -17,8 +17,8 @@ def filter_numerical(df, colName):
 
 # extract weekday and hour from a datetime column
 def extract_datetime(df, colName):
-    return df.withColumn("weekday", date_format(col(colName),'u'))\
-                .withColumn("hour", date_format(col(colName), "H"))\
+    return df.withColumn("weekday", date_format(col(colName),'u').cast(IntegerType()))\
+                .withColumn("hour", date_format(col(colName), "H").cast(IntegerType()))\
                 .drop(colName)
 
 def clean_metar(metar):
