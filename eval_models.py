@@ -27,7 +27,7 @@ def get_ride_data(year, month, size='tiny'):
     return f'/home/atkm/yellow_tripdata_{year}-{month:02}_{size}.csv'
 
 def get_metar_data(year, month):
-    return f'/home/atkm/metar_data/lga_{year}-{month:02}.csv'
+    return f'/home/atkm/lga_{year}-{month:02}.csv'
 
 def read_csv(path):
     return spark.read.format("csv")      .option("header", "true")      .option("inferSchema", "true")      .load(path)
@@ -132,19 +132,20 @@ def get_model_stats(model):
 
 # In[ ]:
 
+year = 2014
 
 rides = sparkutils.count_rides(
-    load_rides(get_ride_data(2014,1))
+    load_rides(get_ride_data(year,1))
 )
 metar = sparkutils.clean_metar(
-    load_metar(get_metar_data(2014,1))
+    load_metar(get_metar_data(year,1))
 )
 for m in range(1): # TODO: replace range(1) with range(12)
     rides = rides.unionAll(
-        sparkutils.count_rides(load_rides(get_ride_data(2014,m+2)))
+        sparkutils.count_rides(load_rides(get_ride_data(year,m+2)))
     )
     metar = metar.unionAll(
-        sparkutils.clean_metar(load_metar(get_metar_data(2014,m+2)))
+        sparkutils.clean_metar(load_metar(get_metar_data(year,m+2)))
     )
     
 joined = sparkutils.join_rides_metar(rides,metar)
@@ -160,3 +161,12 @@ grid_dict = {'numTrees': [5],
 # cv=2, 2 parameter sets to search, 2 months => 11m40s
 model, pred, rmse = rf_pipeline(joined, '1', grid_dict, 2)
 
+import time
+fname = 'rf_201401-201402_' + str(time.time()).split('.')[0] + '.txt'
+with open(fname, 'w') as f:
+    for params in get_model_stats(model):
+        for x in params:
+            f.write(str(x))
+            f.write(' - ')
+        f.write('\n')
+    f.write('Test rmse: ' + str(rmse))

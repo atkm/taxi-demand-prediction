@@ -1,3 +1,5 @@
+DataProc only supports python2 by default.
+
 ## Cluster
 Consider using high-memory instances instead n1-standard.
 Command: gcloud dataproc --region us-west1 clusters create pyspark --subnet default --zone us-west1-b --master-machine-type n1-standard-4 --master-boot-disk-size 500 --num-workers 2 --worker-machine-type n1-standard-2 --worker-boot-disk-size 500 --image-version 1.2 --project spark-rf
@@ -13,3 +15,6 @@ Deploy:
   --user-data-dir=/tmp/pyspark-m
 3. Go to http://pyspark-m:8123
 4. Notebooks are saved in gs://$DATAPROC_BUCKET/notebooks/ --> how to get code??
+
+## Submit job
+submit dependencies as zip?
