@@ -13,8 +13,12 @@
 ## DataProc Cluster
 Command: gcloud dataproc --region us-west1 clusters create pyspark --subnet default --zone us-west1-b --master-machine-type n1-standard-4 --master-boot-disk-size 500 --num-workers 2 --worker-machine-type n1-standard-2 --worker-boot-disk-size 500 --image-version 1.3 --scopes 'https://www.googleapis.com/auth/cloud-platform' --project spark-rf --initialization-actions gs://nyc-taxi-8472/python3-initscript.sh
 Consider using high-memory instances instead n1-standard:
+- Command: gcloud dataproc --region us-west1 clusters create pyspark --subnet default --zone us-west1-b --master-machine-type n1-standard-4 --master-boot-disk-size 500 --num-workers 2 --worker-machine-type n1-standard-2 --worker-boot-disk-size 500 --image-version 1.3 --scopes 'https://www.googleapis.com/auth/cloud-platform' --project spark-rf
+- Consider using high-memory instances instead n1-standard:
 gcloud dataproc --region us-west1 clusters create pyspark --subnet default --zone us-west1-b --master-machine-type n1-highmem-4 --master-boot-disk-size 500 --num-workers 2 --worker-machine-type n1-highmem-2 --worker-boot-disk-size 500 --image-version 1.3 --scopes 'https://www.googleapis.com/auth/cloud-platform' --project spark-rf
-DataProc only supports python2 by default.
+- Ensure python3-initscript.sh is in an appropriate bucket.
+    DataProc only supports python2 by default.
+- Delete: gcloud dataproc clusters delete pyspark --region us-west1
 
 ## Jupyter notebook instructions
 Deploy:
