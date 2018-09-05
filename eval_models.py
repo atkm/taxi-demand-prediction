@@ -161,12 +161,16 @@ grid_dict = {'numTrees': [5],
 # cv=2, 2 parameter sets to search, 2 months => 11m40s
 model, pred, rmse = rf_pipeline(joined, '1', grid_dict, 2)
 
-import time
-fname = 'rf_201401-201402_' + str(time.time()).split('.')[0] + '.txt'
-with open(fname, 'w') as f:
+import time, os
+dirname = 'rf_201401-201402_' + str(time.time()).split('.')[0]
+os.mkdir(dirname)
+with open(dirname + '/results.txt', 'w') as f:
     for params in get_model_stats(model):
         for x in params:
             f.write(str(x))
             f.write(' - ')
         f.write('\n')
-    f.write('Test rmse: ' + str(rmse))
+    f.write('Test rmse: ' + str(rmse) + '\n')
+
+with open(dirname + '/model.pkl', 'wb') as f:
+    pickle.dump(model, f)
