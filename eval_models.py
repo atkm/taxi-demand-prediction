@@ -24,11 +24,11 @@ spark = pyspark.sql.SparkSession.builder.appName("Rides Preprocessor").master("l
 
 
 def get_ride_data(year, month, size='tiny'):
-    # try 'trip_{0}-{1:02d}_{2}.csv'.format(2014, 1, 'tiny')
     return '/home/atkm/yellow_tripdata_{0}-{1:02d}_{2}.csv'.format(year, month, size)
 
 def get_metar_data(year, month):
-    return f'/home/atkm/lga_{year}-{month:02}.csv'
+    #return f'/home/atkm/lga_{year}-{month:02}.csv'
+    return '/home/atkm/lga_{0}-{1:02d}.csv'.format(year, month)
 
 def read_csv(path):
     return spark.read.format("csv")      .option("header", "true")      .option("inferSchema", "true")      .load(path)
