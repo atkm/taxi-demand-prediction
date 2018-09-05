@@ -1,0 +1,11 @@
+## Jupyter notebook instructions
+Deploy:
+0. Cluster Initialization (set timeout high enough. The default 600s=10m may not be enough)
+    gcloud dataproc --region us-west1 clusters create pyspark --subnet default --zone us-west1-b --master-machine-type n1-highmem-4 --master-boot-disk-size 500 --num-workers 2 --worker-machine-type n1-highmem-2 --worker-boot-disk-size 500 --image-version 1.2 --project spark-rf --initialization-actions gs://dataproc-initialization-actions/jupyter/jupyter.sh --initialization-action-timeout 3000
+1. Set up ssh tunnel. Run locally: gcloud compute ssh pyspark-m --project=spark-rf --  -D 8082 -N
+2. Run browser: /bin/google-chrome-stable \
+  --proxy-server="socks5://localhost:8082" \
+  --host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE localhost" \
+  --user-data-dir=/tmp/pyspark-m
+3. Go to http://pyspark-m:8123
+4. Notebooks are saved in gs://$DATAPROC_BUCKET/notebooks/ --> how to get code??
