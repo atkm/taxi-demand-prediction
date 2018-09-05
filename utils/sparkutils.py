@@ -1,7 +1,6 @@
 import pyspark
 from pyspark.sql.functions import udf, date_format, to_timestamp, col, desc
 from pyspark.sql.types import BooleanType, IntegerType, DoubleType
-from utils import datautils
 from utils import geoutils
 
 def drop_minutes(df, colName):
