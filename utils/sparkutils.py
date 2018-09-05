@@ -1,5 +1,5 @@
 import pyspark
-from pyspark.sql.functions import udf, date_format, to_timestamp, col, desc
+from pyspark.sql.functions import udf, date_format, to_timestamp, col, desc, min, max
 from pyspark.sql.types import BooleanType, IntegerType, DoubleType
 from utils import geoutils
 
@@ -57,7 +57,11 @@ def add_grid_cols(rides):
                 .drop('pickup_longitude')
 
 def get_counts(rides):
-    return rides.groupby('pickup_datetime','grid_x','grid_y').count()
+    counted = rides.groupby('pickup_datetime','grid_x','grid_y').count()
+    minmax = counted.agg(min(col('count')), max(col('count')))
+    min_count = minmax.first()[0]
+    max_count = minmax.first()[1]
+    return counted.withColumn('count_scaled', (col('count') - min_count)/(max_count - min_count))
 
 # takes an output of load_rides, and prepares it for a join with metar data.
 def count_rides(rides):

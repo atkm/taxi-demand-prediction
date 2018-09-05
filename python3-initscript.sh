@@ -1,11 +1,11 @@
 set -e
 set -u
 
-echo -n "Installing python3 .. "
-apt-get update
-apt-get -y install python3-pip
-pip3 install numpy
-echo "Done."
+#echo -n "Installing python3 .. "
+#apt-get update
+#apt-get -y install python3-pip
+#pip3 install numpy
+#echo "Done."
 
 # configure spark to use python3.6
 # ref: https://stackoverflow.com/questions/45843960/how-to-run-python3-on-googles-dataproc-pyspark?rq=1
