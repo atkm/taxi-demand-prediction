@@ -21,7 +21,7 @@ gcloud dataproc --region us-west1 clusters create pyspark --subnet default --zon
 - Delete: gcloud dataproc clusters delete pyspark --region us-west1
 
 - file must be in a bucket. Read files with gs://bucket-name/filename.
-- python dependencies must be submitted with --py-files dependencies.zip
+- Job submit command: spark-submit --py-files sparkutils.zip --verbose eval_models.py
 
 ## Jupyter notebook instructions
 Deploy:
