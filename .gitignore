@@ -3,8 +3,8 @@ __pycache__/
 .ipynb_checkpoints/
 venv/
 data/metar_data/*.csv
-data/yellow_tripdata*.csv
-model_*/
+data/*.csv
+rfmodel_*/
 spark-2*/
 derby.log
 metastore_db/
