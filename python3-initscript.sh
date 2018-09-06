@@ -4,7 +4,7 @@ set -u
 # pyspark needs numpy
 echo -n "Installing numpy .. "
 apt-get update
-apt-get -y install python3-pip
+apt-get -y install python3-pip tmux htop
 pip3 install numpy
 echo "Done."
 

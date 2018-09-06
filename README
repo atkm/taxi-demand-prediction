@@ -1,6 +1,12 @@
 2014-01 both 'full' and 'mid' fail after 2 hours.
 Error message says spark.yarn.executor.memoryOverhead 3g is too small.
-Consider using standalone.
+Consider using standalone. -> success!
+On standalone:
+- nFold=2, nParamSets=2, 2014-01: train on 500,000 (mid) in 3 mins; on 13,782,494 (full) in 8 mins.
+- nFold=5, nParamSets=3*2*3=18, 2014-01: on mid in ??? mins.
+
+## Refs
+- http://blog.cloudera.com/blog/2015/03/how-to-tune-your-apache-spark-jobs-part-2/
 
 ## DataProc Cluster
 What does the master do? It doesn't seem to be utilizing all cores. Workers use all cores.
