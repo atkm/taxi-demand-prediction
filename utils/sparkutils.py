@@ -57,18 +57,20 @@ def add_grid_cols(rides):
                 .drop('pickup_longitude')
 
 def get_counts(rides):
-    counted = rides.groupby('pickup_datetime','grid_x','grid_y').count()
-    minmax = counted.agg(min(col('count')), max(col('count')))
-    min_count = minmax.first()[0]
-    max_count = minmax.first()[1]
-    return counted.withColumn('count_scaled', (col('count') - min_count)/(max_count - min_count))
+    return rides.groupby('pickup_datetime','grid_x','grid_y').count()
+    
+# takes an output of get_counts, and scales the counts to [0,1].
+def normalize_counts(counted):
+    minmax = counted.agg(max(col('count')))
+    max_count = minmax.first()[0]
+    return counted.withColumn('count_scaled', col('count')/max_count)
 
 # takes an output of load_rides, and prepares it for a join with metar data.
 def count_rides(rides):
     rides = clean_rides(rides)
     rides = add_grid_cols(rides)
     rides = drop_minutes(rides, 'pickup_datetime')
-    return get_counts(rides)
+    return normalize_counts(get_counts(rides))
 
 # takes outputs of count_rides and
 def join_rides_metar(rides, metar):

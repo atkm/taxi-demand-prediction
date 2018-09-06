@@ -5,6 +5,7 @@
 
 
 import pyspark
+import time, datetime, os, pickle
 
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import VectorAssembler, OneHotEncoderEstimator
@@ -16,21 +17,17 @@ from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
 # In[2]:
 
 
-#spark = pyspark.sql.SparkSession.builder.appName("Rides Preprocessor").master("local").config("spark.local.dir", "/home/atkm/nycTaxi/tmp").getOrCreate()
 spark = pyspark.sql.SparkSession.builder.appName("Rides Preprocessor").getOrCreate()
 
-# import my utils
-spark.sparkContext.addPyFile("sparkutils.zip")
+spark.sparkContext.addPyFile('sparkutils.zip')
 from utils import sparkutils
-
-import time, datetime, os, pickle
 
 
 # In[3]:
 
 
 def get_ride_data(year, month, size='tiny'):
-    if size in ['tiny','small']:
+    if size in ['tiny','small','mid']:
         return 'gs://nyc-taxi-8472/yellow_tripdata_{0}-{1:02d}_{2}.csv'.format(year, month, size)
     elif size == 'full':
         return 'gs://nyc-taxi-8472/yellow_tripdata_{0}-{1:02d}.csv'.format(year, month, size)
@@ -63,7 +60,7 @@ def load_rides(ridesPath):
 
 # df = rides and metar joined.
 # model_type = '1', '2', or '3'.
-def rf_pipeline(rides_metar_joined, model_type, grid_dict, numFolds=5):
+def rf_pipeline(df_2014, df_2015, model_type, grid_dict, numFolds=5):
     
     rf = RandomForestRegressor(
         featuresCol='features',
@@ -112,8 +109,8 @@ def rf_pipeline(rides_metar_joined, model_type, grid_dict, numFolds=5):
     # minInstancesPerNode: [1, 10, 100, 1000]
     paramGrid = ParamGridBuilder()         .addGrid(rf.numTrees, grid_dict['numTrees'])         .addGrid(rf.maxDepth, grid_dict['maxDepth'])         .addGrid(rf.minInstancesPerNode, grid_dict['minInstancesPerNode'])         .build()
     
-    
-    train, dev, test = rides_metar_joined.randomSplit([1/3] * 3)
+    train = df_2014
+    dev, test = df_2015.randomSplit([0.5, 0.5)
     
     evaluator = RegressionEvaluator(
         labelCol='count_scaled', predictionCol='prediction', metricName='rmse'
@@ -127,8 +124,10 @@ def rf_pipeline(rides_metar_joined, model_type, grid_dict, numFolds=5):
     model = crossval.fit(train)
     pred_on_test = model.transform(test)
     rmse_on_test = evaluator.evaluate(pred_on_test)
+    # consider returning mean error and its stddev as well
     mean_error = pred.agg(pyspark.sql.functions.abs(col('count') - col('prediction')))
     error_stddev = pred.agg(stddev(col('count') - col('prediction')))
+    
     
     # get metric values with model.avgMetrics,
     # and parameters with model.getEstimatorParamMaps
@@ -147,23 +146,19 @@ def get_model_stats(model):
 
 # In[ ]:
 
-year = 2014
-begin_month = 1
-end_month = 1
-size = 'tiny'
 
 rides = sparkutils.count_rides(
-    load_rides(get_ride_data(year,begin_month,size))
+    load_rides(get_ride_data(2014,1))
 )
 metar = sparkutils.clean_metar(
-    load_metar(get_metar_data(year,begin_month))
+    load_metar(get_metar_data(2014,1))
 )
-for m in range(end_month - begin_month):
+for m in range(0): # TODO: replace range(1) with range(12)
     rides = rides.unionAll(
-        sparkutils.count_rides(load_rides(get_ride_data(year, m+1 + begin_month, size)))
+        sparkutils.count_rides(load_rides(get_ride_data(2014,m+2)))
     )
     metar = metar.unionAll(
-        sparkutils.clean_metar(load_metar(get_metar_data(year, m+1 + begin_month)))
+        sparkutils.clean_metar(load_metar(get_metar_data(2014,m+2)))
     )
     
 joined = sparkutils.join_rides_metar(rides,metar)
@@ -177,23 +172,5 @@ grid_dict = {'numTrees': [5],
              'minInstancesPerNode': [1,5]}
 # cv=5, 2 parameter sets to search, 2 months => 29m32s
 # cv=2, 2 parameter sets to search, 2 months => 11m40s
-time_start = time.time()
 model, pred, rmse = rf_pipeline(joined, '1', grid_dict, 2)
-time_end = time.time()
-time_spent = int(time_end - time_start)
 
-# Save results
-dirname = 'rfmodel_' + str(int(time.mktime(datetime.datetime.today().timetuple())))
-os.mkdir(dirname)
-with open(dirname + '/results.txt', 'w') as f:
-    f.write("Data: year={0}, month={1:02d}-{2:02d}, size={3}\n".format(year, begin_month, end_month, size))
-    f.write("Time (in seconds): {0}\n = {1}h{2:02d}m\n".format(time_spent, time_spent // 3600, (time_spent % 3600) // 60))
-    for params in get_model_stats(model):
-        for x in params:
-            f.write(str(x))
-            f.write(' - ')
-        f.write('\n')
-    f.write('Test rmse: ' + str(rmse) + '\n')
-
-model.bestModel.save(dirname + '.model')
-print("Result saved in {0}/, and model in hdfs as {0}.model".format(dirname))
