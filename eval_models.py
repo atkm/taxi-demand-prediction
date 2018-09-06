@@ -6,6 +6,7 @@
 
 import pyspark
 
+from pyspark.sql.functions import col, stddev
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import VectorAssembler, OneHotEncoderEstimator
 from pyspark.ml.regression import RandomForestRegressor
