@@ -127,8 +127,8 @@ def rf_pipeline(rides_metar_joined, model_type, grid_dict, numFolds=5):
     model = crossval.fit(train)
     pred_on_test = model.transform(test)
     rmse_on_test = evaluator.evaluate(pred_on_test)
-    mean_error = pred.agg(pyspark.sql.functions.abs(col('count') - col('prediction')))
-    error_stddev = pred.agg(stddev(col('count') - col('prediction')))
+    mean_error = pred_on_test.agg(pyspark.sql.functions.abs(col('count') - col('prediction')))
+    error_stddev = pred_on_test.agg(stddev(col('count') - col('prediction')))
     
     # get metric values with model.avgMetrics,
     # and parameters with model.getEstimatorParamMaps

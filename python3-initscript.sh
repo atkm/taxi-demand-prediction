@@ -1,11 +1,12 @@
 set -e
 set -u
 
-#echo -n "Installing python3 .. "
-#apt-get update
-#apt-get -y install python3-pip
-#pip3 install numpy
-#echo "Done."
+# pyspark needs numpy
+echo -n "Installing numpy .. "
+apt-get update
+apt-get -y install python3-pip
+pip3 install numpy
+echo "Done."
 
 # configure spark to use python3.6
 # ref: https://stackoverflow.com/questions/45843960/how-to-run-python3-on-googles-dataproc-pyspark?rq=1
@@ -15,6 +16,7 @@ echo "spark.executorEnv.PYTHONHASHSEED=0" >> /etc/spark/conf/spark-defaults.conf
 
 echo -n "Setting up the prediction project .. "
 git clone https://akumano@bitbucket.org/akumano/taxi-demand-prediction.git
+chmod -R 775 ./taxi-demand-prediction
 # Spark jobs should get data from gs://.
 #gsutil cp gs://nyc-taxi-8472/yellow_tripdata_2014-{01..12}_tiny.csv ./data/
 #gsutil cp gs://nyc-taxi-8472/lga_2014-{01..12}.csv ./data/

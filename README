@@ -1,18 +1,12 @@
-## Self-managed Cluster
-- provision
-1. git, default-jre (gets 8)
-2. python3.6 -> add "deb http://ftp.de.debian.org/debian testing main" in /etc/apt/sources.list
-    and 'apt-get install -t testing python3.6'.
-    virtualenv: also get it from testing: 'apt-get install -t testing python3-venv'
-    python3.6 -m venv venv
-    activate virtualenv
-3. pip install pyspark pandas (pandas shouldn't be necessary, but is a dependency of datautils.py)
-
-
+2014-01 both 'full' and 'mid' fail after 2 hours.
+Error message says spark.yarn.executor.memoryOverhead 3g is too small.
+Consider using standalone.
 
 ## DataProc Cluster
 What does the master do? It doesn't seem to be utilizing all cores. Workers use all cores.
 Try a larger number of cores on workers: gcloud dataproc --region us-west1 clusters create pyspark --subnet default --zone us-west1-b --master-machine-type n1-standard-2 --master-boot-disk-size 500 --num-workers 2 --worker-machine-type n1-standard-4 --worker-boot-disk-size 500 --image-version 1.3 --scopes 'https://www.googleapis.com/auth/cloud-platform' --project spark-rf --initialization-actions gs://nyc-taxi-8472/python3-initscript.sh
+Standalone:
+gcloud dataproc --region us-west1 clusters create pyspark --subnet default --zone us-west1-b --single-node --master-machine-type n1-standard-8 --master-boot-disk-size 500 --image-version 1.3 --project spark-rf --initialization-actions gs://nyc-taxi-8472/python3-initscript.sh
 
 
 Command:
@@ -40,3 +34,16 @@ Deploy:
 
 ## Submit job
 submit dependencies as zip?
+
+## Self-managed Cluster
+- provision
+1. git, default-jre (gets 8)
+2. python3.6 -> add "deb http://ftp.de.debian.org/debian testing main" in /etc/apt/sources.list
+    and 'apt-get install -t testing python3.6'.
+    virtualenv: also get it from testing: 'apt-get install -t testing python3-venv'
+    python3.6 -m venv venv
+    activate virtualenv
+3. pip install pyspark pandas (pandas shouldn't be necessary, but is a dependency of datautils.py)
+
+
+
