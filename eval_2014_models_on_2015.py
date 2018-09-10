@@ -37,6 +37,9 @@ def load_metar(metarPath):
 
 def load_rides(ridesPath):
     rides = read_csv(ridesPath)
+    # 2015
+    if 'tpep_pickup_datetime' in rides.schema.names:
+        rides = rides.withColumnRenamed('tpep_pickup_datetime', 'pickup_datetime')
     # 2014
     colNames = map(lambda name: name.strip(), rides.columns)
     rides = rides.toDF(*colNames)
