@@ -26,6 +26,7 @@ def get_metar_data(year, month):
     #return 'file:///home/atkm/taxi-demand-prediction/data/lga_{0}-{1:02d}.csv'.format(year, month)
     return 'gs://nyc-taxi-8472/lga_{0}-{1:02d}.csv'.format(year, month)
 
+
 def read_csv(path):
     return spark.read.format("csv")      .option("header", "true")      .option("inferSchema", "true")      .load(path)
 
@@ -123,8 +124,7 @@ def get_model_stats(model):
     pmaps = [list(_parse_params(params)) for params in pmaps]
     return list(zip(pmaps, model.avgMetrics))
 
-
-def get_rides_data(year,size):
+def get_ride_data_year(year,size):
     rides = sparkutils.count_rides(
         load_rides(get_ride_data(year, 1, size))
     )
@@ -134,7 +134,7 @@ def get_rides_data(year,size):
                 )
     return rides
 
-def get_metar_data(year):
+def get_metar_data_year(year):
     metar = sparkutils.clean_metar(
         load_metar(get_metar_data(year, 1))
     )
@@ -144,11 +144,12 @@ def get_metar_data(year):
                 )
     return metar
 
+
 size = 'tiny' #TODO: change to small
-rides_2014 = get_ride_data(2014, size)
-metar_2014 = get_metar_data(2014)
-rides_2015 = get_ride_data(2015, size)
-metar_2015 = get_metar_data(2015)
+rides_2014 = get_ride_data_year(2014, size)
+metar_2014 = get_metar_data_year(2014)
+rides_2015 = get_ride_data_year(2015, size)
+metar_2015 = get_metar_data_year(2015)
 joined_2014 = sparkutils.join_rides_metar(rides_2014, metar_2014)
 joined_2015 = sparkutils.join_rides_metar(rides_2015, metar_2015)
 
