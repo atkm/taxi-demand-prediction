@@ -129,9 +129,9 @@ def get_rides_data(year,size):
         load_rides(get_ride_data(year, 1, size))
     )
     for m in range(2,13):
-    rides = rides.unionAll(
-            sparkutils.count_rides(load_rides(get_ride_data(year, m, size)))
-        )
+        rides = rides.unionAll(
+                sparkutils.count_rides(load_rides(get_ride_data(year, m, size)))
+                )
     return rides
 
 def get_metar_data(year):
