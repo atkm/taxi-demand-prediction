@@ -16,7 +16,6 @@ echo "spark.executorEnv.PYTHONHASHSEED=0" >> /etc/spark/conf/spark-defaults.conf
 
 echo -n "Setting up the prediction project .. "
 git clone https://akumano@bitbucket.org/akumano/taxi-demand-prediction.git
-mkdir /home/atkm
 mv taxi-demand-prediction /home/atkm
 # Spark jobs should get data from gs://.
 #gsutil cp gs://nyc-taxi-8472/yellow_tripdata_2014-{01..12}_tiny.csv ./data/

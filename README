@@ -5,6 +5,8 @@ On standalone:
 - nFold=2, nParamSets=2, 2014-01: train on 500,000 (mid) in 3 mins; on 13,782,494 (full) in 8 mins.
 - nFold=5, nParamSets=3*2*3=18, 2014-01: on mid in ??? mins.
 
+maxDepth supported up to 30.
+
 ## Refs
 - http://blog.cloudera.com/blog/2015/03/how-to-tune-your-apache-spark-jobs-part-2/
 
