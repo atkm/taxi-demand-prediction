@@ -158,5 +158,23 @@ grid_dict = {'numTrees': [5],
              'minInstancesPerNode': [1]}
 # cv=5, 2 parameter sets to search, 2 months => 29m32s
 # cv=2, 2 parameter sets to search, 2 months => 11m40s
+time_start = time.time()
 model, pred, rmse = rf_pipeline(joined_2014, joined_2015, '1', grid_dict, 2) #TODO: change 2 -> 5.
+time_end = time.time()
+time_spent = int(time_end - time_start)
 
+# Save results
+dirname = 'rfmodel_' + str(int(time.mktime(datetime.datetime.today().timetuple())))
+os.mkdir(dirname)
+with open(dirname + '/results.txt', 'w') as f:
+    f.write("Data: train year=2014, test/dev year=2015, size={0}\n".format(size))
+    f.write("Time (in seconds): {0}\n = {1}h{2:02d}m\n".format(time_spent, time_spent // 3600, (time_spent % 3600) // 60))
+    for params in get_model_stats(model):
+        for x in params:
+            f.write(str(x))
+            f.write(' - ')
+        f.write('\n')
+    f.write('Test rmse: ' + str(rmse) + '\n')
+
+model.bestModel.save(dirname + '.model')
+print("Result saved in {0}/, and model in hdfs as {0}.model".format(dirname))
