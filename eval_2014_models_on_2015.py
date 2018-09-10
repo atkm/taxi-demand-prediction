@@ -1,9 +1,3 @@
-
-# coding: utf-8
-
-# In[1]:
-
-
 import pyspark
 import time, datetime, os, pickle
 
@@ -14,17 +8,10 @@ from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
 
 
-# In[2]:
-
-
 spark = pyspark.sql.SparkSession.builder.appName("Rides Preprocessor").getOrCreate()
 
 spark.sparkContext.addPyFile('sparkutils.zip')
 from utils import sparkutils
-
-
-# In[3]:
-
 
 def get_ride_data(year, month, size='tiny'):
     if size in ['tiny','small','mid']:
@@ -53,9 +40,6 @@ def load_rides(ridesPath):
     colNames = map(lambda name: name.strip(), rides.columns)
     rides = rides.toDF(*colNames)
     return rides.select("pickup_datetime","pickup_latitude", "pickup_longitude")
-
-
-# In[4]:
 
 
 # df = rides and metar joined.
@@ -103,14 +87,10 @@ def rf_pipeline(df_2014, df_2015, model_type, grid_dict, numFolds=5):
     else:
         raise ValueError("Model type must be either 1, 2, or 3.")
         
-    # TODO: is there a random search module?
-    # start with numTrees: [10, 100, 1000]
-    # maxDepth: [10, 100, 1000]
-    # minInstancesPerNode: [1, 10, 100, 1000]
     paramGrid = ParamGridBuilder()         .addGrid(rf.numTrees, grid_dict['numTrees'])         .addGrid(rf.maxDepth, grid_dict['maxDepth'])         .addGrid(rf.minInstancesPerNode, grid_dict['minInstancesPerNode'])         .build()
     
     train = df_2014
-    dev, test = df_2015.randomSplit([0.5, 0.5)
+    dev, test = df_2015.randomSplit([0.5, 0.5])
     
     evaluator = RegressionEvaluator(
         labelCol='count_scaled', predictionCol='prediction', metricName='rmse'
@@ -144,33 +124,39 @@ def get_model_stats(model):
     return list(zip(pmaps, model.avgMetrics))
 
 
-# In[ ]:
-
-
-rides = sparkutils.count_rides(
-    load_rides(get_ride_data(2014,1))
-)
-metar = sparkutils.clean_metar(
-    load_metar(get_metar_data(2014,1))
-)
-for m in range(0): # TODO: replace range(1) with range(12)
+def get_rides_data(year,size):
+    rides = sparkutils.count_rides(
+        load_rides(get_ride_data(year, 1, size))
+    )
+    for m in range(2,13):
     rides = rides.unionAll(
-        sparkutils.count_rides(load_rides(get_ride_data(2014,m+2)))
+            sparkutils.count_rides(load_rides(get_ride_data(year, m, size)))
+        )
+    return rides
+
+def get_metar_data(year):
+    metar = sparkutils.clean_metar(
+        load_metar(get_metar_data(year, 1))
     )
-    metar = metar.unionAll(
-        sparkutils.clean_metar(load_metar(get_metar_data(2014,m+2)))
-    )
-    
-joined = sparkutils.join_rides_metar(rides,metar)
+    for m in range(2,13):
+        metar = metar.unionAll(
+                sparkutils.clean_metar(load_metar(get_metar_data(year, m)))
+                )
+    return metar
 
+size = 'tiny' #TODO: change to small
+rides_2014 = get_ride_data(2014, size)
+metar_2014 = get_metar_data(2014)
+rides_2015 = get_ride_data(2015, size)
+metar_2015 = get_metar_data(2015)
+joined_2014 = sparkutils.join_rides_metar(rides_2014, metar_2014)
+joined_2015 = sparkutils.join_rides_metar(rides_2015, metar_2015)
 
-# In[ ]:
-
-
+# TODO: change to numTrees: [200]; maxDepth: [30]
 grid_dict = {'numTrees': [5],
              'maxDepth': [10],
-             'minInstancesPerNode': [1,5]}
+             'minInstancesPerNode': [1]}
 # cv=5, 2 parameter sets to search, 2 months => 29m32s
 # cv=2, 2 parameter sets to search, 2 months => 11m40s
-model, pred, rmse = rf_pipeline(joined, '1', grid_dict, 2)
+model, pred, rmse = rf_pipeline(joined_2014, joined_2015, '1', grid_dict, 2) #TODO: change 2 -> 5.
 

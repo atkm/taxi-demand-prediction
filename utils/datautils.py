@@ -82,6 +82,11 @@ def counts_by_grid_cell(df):
     count = df.groupby(['grid_x', 'grid_y']).size()
     return count
 
+def extract_hour_weekday(df):
+    df['weekday'] = df['pickup_datetime'].dt.weekday
+    df['hour'] = df['pickup_datetime'].dt.hour
+    return df
+
 def read_metar(csv):
     usecols = ['valid', 'tmpf', ' p01i'] # p01i has a whitespace in its name
     df = pd.read_csv(csv, usecols=usecols)
